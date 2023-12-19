@@ -6,10 +6,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map.Entry;
-
 import fdi.ucm.server.modelComplete.collection.CompleteCollection;
 import fdi.ucm.server.modelComplete.collection.document.CompleteDocuments;
 import fdi.ucm.server.modelComplete.collection.document.CompleteElement;
@@ -97,8 +96,8 @@ public class DotSaveCollection {
 				System.out.println("ignorada Gramatica.>"+GG.getNombre());
 		}
 		
-		HashMap<CompleteElementType, Long> CE2IdCOI=new HashMap<CompleteElementType, Long>();
-		HashMap<Long, CompleteElementType> ID2CE=new HashMap<Long, CompleteElementType>();
+		HashMap<CompleteElementType, CompleteElementType> CE2IdCOI=new HashMap<CompleteElementType, CompleteElementType>();
+		HashSet<CompleteElementType> ID2CE=new HashSet<CompleteElementType>();
 		
 		for (CompleteGrammar completeGrammar : GrammarValidas) 
 			fillHashes(completeGrammar.getSons(),CE2IdCOI,ID2CE);
@@ -148,7 +147,7 @@ public class DotSaveCollection {
 		            System.out.println("fichero dot strucreado");
 	            
 	            
-		            for (CompleteElementType Stru_nomber : CE2IdCOI.keySet()) {
+		            for (CompleteElementType Stru_nomber : ID2CE) {
 		            	if (Stru_nomber.getClassOfIterator()==null||Stru_nomber.getClassOfIterator()==Stru_nomber)
 		            		dotLeyendFileExtend.write(Stru_nomber.getClavilenoid()+";\""+pathElem(Stru_nomber)+"\"\n");
 					}
@@ -160,6 +159,10 @@ public class DotSaveCollection {
 		HashMap<At_Val, Long> listaT = new HashMap<DotSaveCollection.At_Val, Long>();            
 		            
 		for (CompleteDocuments cc : object.getEstructuras()) {
+			
+			StringBuffer DocString=new StringBuffer();
+			StringBuffer DocStringTextual=new StringBuffer();
+			
 			for (CompleteElement ce : cc.getDescription()) {
 				
 				if (ce instanceof CompleteTextElement)
@@ -172,7 +175,12 @@ public class DotSaveCollection {
 					
 					Value = Value.replaceAll(";", "");
 					
-					At_Val at_val = new At_Val(ce.getHastype(), Value);
+					
+					CompleteElementType HashType = CE2IdCOI.get(ce.getHastype());
+					
+					if (HashType!=null) {
+					
+					At_Val at_val = new At_Val(HashType, Value);
 					
 					List<At_Val> ListaTempo=new LinkedList<DotSaveCollection.At_Val>(listaT.keySet());
 					
@@ -184,9 +192,10 @@ public class DotSaveCollection {
 	        			IndiceClave++;
 	        			}
 					
+					DocString.append(listaT.get(at_val)+" ");
+					DocStringTextual.append(at_val+" ");
+					}
 					
-					dotLongFile.write(listaT.get(at_val)+" ");
-					dotValueFile.write(at_val+" ");
 					
 				}
 		
@@ -196,8 +205,18 @@ public class DotSaveCollection {
 				
 			}
 			
-			dotLongFile.write("\n");
-			dotValueFile.write("\n");
+			if (DocString.length()>0)
+			{
+				DocString.append("\n");
+				dotLongFile.write(DocString.toString());
+			}
+			
+			if (DocStringTextual.length()>0)
+			{
+				DocStringTextual.append("\n");
+				dotValueFile.write(DocStringTextual.toString());
+			}
+			
 		}
 		
 		
@@ -227,8 +246,8 @@ public class DotSaveCollection {
 	}
 	
 	private void fillHashes(List<CompleteElementType> sons,
-			HashMap<CompleteElementType, Long> cE2IdCOI,
-			HashMap<Long, CompleteElementType> iD2CE) {
+			HashMap<CompleteElementType, CompleteElementType> cE2IdCOI,
+			HashSet<CompleteElementType> ListyValid) {
 		for (CompleteElementType ss : sons) {
 			
 				if (ss instanceof CompleteTextElementType)
@@ -239,21 +258,24 @@ public class DotSaveCollection {
 						
 							if (onlyBrowsing&&ss.isBrowseable())
 								{
-								cE2IdCOI.put(ss, ss.getClavilenoid());
-								iD2CE.put(ss.getClavilenoid(), ss);
+								cE2IdCOI.put(ss, ss);
+								ListyValid.add(ss);
 								}
 							else if (!onlyBrowsing)
 								{
-								cE2IdCOI.put(ss, ss.getClavilenoid());
-								iD2CE.put(ss.getClavilenoid(), ss);
+								cE2IdCOI.put(ss, ss);
+								ListyValid.add(ss);
 								}
 							else
 								System.out.println("ignorada structure.>"+ss.getName());
 						
 						}else
 						{
-							cE2IdCOI.put(ss, ss.getClassOfIterator().getClavilenoid());
-							iD2CE.put(ss.getClavilenoid(), ss);
+							if (onlyBrowsing&&ss.isBrowseable())
+								cE2IdCOI.put(ss, ss.getClassOfIterator());
+							else if (!onlyBrowsing)
+								cE2IdCOI.put(ss, ss.getClassOfIterator());
+
 						}
 						
 					}
@@ -261,7 +283,7 @@ public class DotSaveCollection {
 					System.out.println("ignorada structure.>"+ss.getName());
 			
 			
-			fillHashes(ss.getSons(), cE2IdCOI, iD2CE);
+			fillHashes(ss.getSons(), cE2IdCOI, ListyValid);
 			
 		}
 		

@@ -50,14 +50,14 @@ public class AppScript
 					 
 					 
 					 DotSaveCollection SPFalse=new DotSaveCollection();
-					 SPFalse.processCollecccion(object,FolderCol,false);
+					 SPFalse.processCollecccion(object,FolderCol,true);
 						
 						
 						String FolderCol2 = Folder+File.separator+object.getName()+"_ALL";
 						 new File(FolderCol2).mkdirs();
 						 
 						DotSaveCollection SPTrue=new DotSaveCollection();
-						SPTrue.processCollecccion(object,FolderCol2,true);
+						SPTrue.processCollecccion(object,FolderCol2,false);
 					 
 					 try {
 						 ois.close();
